@@ -4,11 +4,24 @@
  * Handles loading and managing the devbyai.json configuration file.
  */
 
+export interface ProviderConfig {
+  /** Provider identifier */
+  id: string;
+  /** API key (prefer environment variables) */
+  apiKey?: string;
+  /** Custom base URL */
+  baseUrl?: string;
+  /** Default model */
+  model?: string;
+}
+
 export interface DevByAIConfig {
   /** Default AI provider */
   provider?: string;
   /** Default model */
   model?: string;
+  /** Provider configurations */
+  providers?: Record<string, ProviderConfig>;
   /** Workspace settings */
   workspace?: {
     /** Root directory override */
@@ -35,6 +48,7 @@ export interface DevByAIConfig {
 const DEFAULT_CONFIG: DevByAIConfig = {
   provider: "mock",
   model: "mock",
+  providers: {},
   permissions: {
     write: "ask",
     execute: "ask",
@@ -66,6 +80,14 @@ export async function loadConfig(cwd: string): Promise<DevByAIConfig> {
     _config = { ...DEFAULT_CONFIG };
   }
 
+  // Override with environment variables
+  if (process.env.DEVBYAI_PROVIDER) {
+    _config.provider = process.env.DEVBYAI_PROVIDER;
+  }
+  if (process.env.DEVBYAI_MODEL) {
+    _config.model = process.env.DEVBYAI_MODEL;
+  }
+
   return _config;
 }
 
@@ -81,6 +103,26 @@ export function getConfig(): DevByAIConfig {
  */
 export function getDefaultConfig(): DevByAIConfig {
   return { ...DEFAULT_CONFIG };
+}
+
+/**
+ * Get API key for a provider from environment variables.
+ * Returns undefined if not found.
+ */
+export function getApiKey(provider: string): string | undefined {
+  const envVarMap: Record<string, string> = {
+    openai: "OPENAI_API_KEY",
+    anthropic: "ANTHROPIC_API_KEY",
+    google: "GOOGLE_API_KEY",
+  };
+
+  const envVar = envVarMap[provider];
+  if (envVar) {
+    return process.env[envVar];
+  }
+
+  // Generic fallback
+  return process.env[`${provider.toUpperCase()}_API_KEY`];
 }
 
 export type { DevByAIConfig as Config };

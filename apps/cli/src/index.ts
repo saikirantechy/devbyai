@@ -12,7 +12,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { getConfig, loadConfig } from "@devbyai/config";
+import { getApiKey, getConfig, loadConfig } from "@devbyai/config";
 import { Orchestrator } from "@devbyai/core";
 import { createDefaultProviderRegistry } from "@devbyai/models";
 import { createDefaultToolRegistry } from "@devbyai/tools";
@@ -41,7 +41,7 @@ function getVersion(): string {
     const pkg = JSON.parse(readFileSync(resolve(__dirname, "../package.json"), "utf-8"));
     return pkg.version;
   } catch {
-    return "0.1.0";
+    return "0.2.0";
   }
 }
 
@@ -54,8 +54,6 @@ const program = new Command();
 program.name("devbyai").description("DEVBYAI — AI Development Orchestrator").version(getVersion());
 
 // --- devbyai (main command) ---
-// When run without arguments, launches interactive mode
-// When run with a task argument, executes the task directly
 program.argument("[task]", "Task to execute (optional)").action(async (task?: string) => {
   const cwd = process.cwd();
   const version = getVersion();
@@ -65,6 +63,7 @@ program.argument("[task]", "Task to execute (optional)").action(async (task?: st
   if (task) {
     // Direct task execution mode
     const workspace = detectWorkspace(cwd);
+    const config = getConfig();
 
     printBanner({ version, workspace: workspace.name });
 
@@ -72,9 +71,39 @@ program.argument("[task]", "Task to execute (optional)").action(async (task?: st
     console.log(sectionHeader("TASK"));
     console.log();
     console.log(`    ${chalk.gray("Request:")} ${chalk.white(task)}`);
-    console.log(`    ${chalk.gray("Provider:")} ${chalk.cyan("MockProvider")}`);
-    console.log(`    ${chalk.gray("Mode:")} ${chalk.yellow("Simulation")}`);
+
+    // Determine provider
+    const providerRegistry = createDefaultProviderRegistry();
+    const providerId = config.provider || "mock";
+    const provider = providerRegistry.create(providerId);
+
+    if (!provider) {
+      console.log(`    ${status.error(`Unknown provider: ${providerId}`)}`);
+      process.exit(1);
+    }
+
+    // Initialize provider
+    const apiKey = getApiKey(providerId);
+    await provider.initialize({ apiKey, model: config.model });
+
+    const providerName = provider.name;
+    const isConfigured = provider.isConfigured ? provider.isConfigured() : true;
+
+    console.log(`    ${chalk.gray("Provider:")} ${chalk.cyan(providerName)}`);
+    console.log(`    ${chalk.gray("Model:")} ${chalk.white(provider.getModel())}`);
+    if (!isConfigured) {
+      console.log(`    ${chalk.gray("Status:")} ${chalk.yellow("Not configured")}`);
+    }
     console.log();
+
+    if (!isConfigured) {
+      console.log(`    ${chalk.yellow("AI provider is not configured.")}`);
+      console.log(`    ${chalk.gray("Configure a provider to enable AI-powered task execution.")}`);
+      console.log();
+      console.log(`    ${chalk.gray("Try:")} ${chalk.white("devbyai models")}`);
+      console.log();
+      process.exit(0);
+    }
 
     // Create pipeline visualization
     const pipeline = createPipeline(["EXPLORE", "PLAN", "BUILD", "REVIEW", "TEST", "SHIP"]);
@@ -84,16 +113,6 @@ program.argument("[task]", "Task to execute (optional)").action(async (task?: st
     console.log(pipeline.render());
     console.log(divider());
     console.log();
-
-    const config = getConfig();
-    const providerRegistry = createDefaultProviderRegistry();
-    const provider = providerRegistry.create(config.provider || "mock");
-    if (!provider) {
-      pipeline.error("EXPLORE", `Unknown provider: ${config.provider}`);
-      console.log(pipeline.render());
-      process.exit(1);
-    }
-    await provider.initialize({});
 
     const tools = createDefaultToolRegistry();
     const orchestrator = new Orchestrator({ config, provider, tools, cwd });
@@ -248,26 +267,70 @@ program
   .description("List available AI providers and models")
   .action(async () => {
     const registry = createDefaultProviderRegistry();
+    const config = getConfig();
+    const activeProviderId = config.provider || "mock";
 
     console.log();
-    console.log(sectionHeader("PROVIDERS"));
+    console.log(sectionHeader("AI MODELS"));
+    console.log();
+
+    // Active provider
+    console.log(`  ${chalk.bold.white("ACTIVE")}`);
+    console.log();
+    console.log(`    ${chalk.gray("Provider:")} ${chalk.white(activeProviderId)}`);
+    console.log(`    ${chalk.gray("Model:")}    ${chalk.white(config.model || "mock")}`);
+
+    // Check API key
+    const apiKey = getApiKey(activeProviderId);
+    if (apiKey) {
+      console.log(`    ${chalk.gray("API Key:")}  ${chalk.green("✓ Configured")}`);
+    } else if (activeProviderId !== "mock") {
+      console.log(`    ${chalk.gray("API Key:")}  ${chalk.yellow("⚠ Not found")}`);
+    }
+    console.log();
+
+    // Available providers
+    console.log(`  ${chalk.bold.white("AVAILABLE PROVIDERS")}`);
     console.log();
 
     for (const id of registry.listIds()) {
       const provider = registry.create(id);
       if (!provider) continue;
+
+      const isConfigured = provider.isConfigured ? provider.isConfigured() : true;
+      const hasApiKey = id === "mock" || getApiKey(id);
       const models = await provider.listModels();
-      console.log(
-        `    ${chalk.cyan(symbols.bullet)} ${chalk.white.bold(provider.name)} ${chalk.gray(`(${id})`)}`,
-      );
-      for (const model of models) {
+
+      let statusIcon: string;
+      if (isConfigured && (id === "mock" || hasApiKey)) {
+        statusIcon = chalk.green(symbols.success);
+      } else {
+        statusIcon = chalk.yellow(symbols.warning);
+      }
+
+      console.log(`    ${statusIcon} ${chalk.white.bold(provider.name)} ${chalk.gray(`(${id})`)}`);
+
+      for (const model of models.slice(0, 5)) {
         console.log(`      ${chalk.gray("─")} ${chalk.white(model)}`);
+      }
+      if (models.length > 5) {
+        console.log(`      ${chalk.gray("─")} ${chalk.gray(`... and ${models.length - 5} more`)}`);
+      }
+
+      if (id !== "mock" && !hasApiKey) {
+        console.log(
+          `      ${chalk.yellow(`⚠ Set ${id.toUpperCase()}_API_KEY environment variable`)}`,
+        );
       }
       console.log();
     }
 
-    console.log(`  ${chalk.gray("Note: Only MockProvider is available in v0.1.0")}`);
-    console.log(`  ${chalk.gray("Real providers (OpenAI, Anthropic) coming in v0.2.0")}`);
+    // Coming soon
+    console.log(`  ${chalk.bold.white("COMING SOON")}`);
+    console.log();
+    console.log(`    ${chalk.gray("─")} Anthropic`);
+    console.log(`    ${chalk.gray("─")} Google Gemini`);
+    console.log(`    ${chalk.gray("─")} Ollama (Local)`);
     console.log();
   });
 
@@ -323,8 +386,22 @@ program
       console.log(`    ${status.warning("Config: No devbyai.json (using defaults)")}`);
     }
 
+    // Provider status
     console.log();
-    console.log(`  ${status.success(chalk.bold("All checks passed."))}`);
+    const config = getConfig();
+    const providerId = config.provider || "mock";
+    const apiKey = getApiKey(providerId);
+
+    if (providerId === "mock") {
+      console.log(`    ${status.success("Provider: MockProvider (development mode)")}`);
+    } else if (apiKey) {
+      console.log(`    ${status.success(`Provider: ${providerId} (API key configured)`)}`);
+    } else {
+      console.log(`    ${status.warning(`Provider: ${providerId} (API key not found)`)}`);
+    }
+
+    console.log();
+    console.log(`  ${status.success(chalk.bold("Environment check complete."))}`);
     console.log();
   });
 

@@ -18,3 +18,23 @@ export type {
   PipelineConfig,
   PipelineContext,
 } from "./pipeline.js";
+
+export { HookRegistry } from "./hooks.js";
+export type {
+  Hook,
+  HookEvent,
+  HookContext,
+} from "./hooks.js";
+
+export {
+  WorkflowRegistry,
+  EXPLORE_WORKFLOW,
+  PLAN_WORKFLOW,
+  DEVELOPMENT_WORKFLOW,
+  REVIEW_WORKFLOW,
+} from "./workflows.js";
+export type {
+  Workflow,
+  WorkflowMetadata,
+  WorkflowStep,
+} from "./workflows.js";

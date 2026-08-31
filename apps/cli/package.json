@@ -15,9 +15,11 @@
     "clean": "node ../../scripts/clean.mjs"
   },
   "dependencies": {
+    "@devbyai/agents": "workspace:*",
     "@devbyai/config": "workspace:*",
     "@devbyai/core": "workspace:*",
     "@devbyai/models": "workspace:*",
+    "@devbyai/skills": "workspace:*",
     "@devbyai/tools": "workspace:*",
     "@devbyai/ui": "workspace:*",
     "chalk": "^4.1.2",

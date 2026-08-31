@@ -1,8 +1,8 @@
 /**
  * DEVBYAI Model Provider System
  *
- * Defines the ModelProvider abstraction and provides a MockProvider for
- * development and testing.
+ * Defines the ModelProvider abstraction and provides providers for
+ * AI model integration.
  */
 
 // ---------------------------------------------------------------------------
@@ -37,6 +37,14 @@ export interface ModelStreamChunk {
   done: boolean;
 }
 
+export type ProviderStatus =
+  | "not-configured"
+  | "configuring"
+  | "available"
+  | "connected"
+  | "unavailable"
+  | "error";
+
 export interface ModelProvider {
   /** Provider identifier */
   readonly id: string;
@@ -51,6 +59,9 @@ export interface ModelProvider {
 
   /** Get the currently selected model */
   getModel(): string;
+
+  /** Check if provider is configured */
+  isConfigured?(): boolean;
 
   /** Send a message and get a full response */
   generate(messages: ModelMessage[], options?: GenerateOptions): Promise<ModelResponse>;
@@ -75,6 +86,7 @@ export class MockProvider implements ModelProvider {
 
   private model = "mock-default";
   private responseDelay = 100;
+  private _configured = true;
 
   async initialize(_config: Record<string, unknown>): Promise<void> {
     // No-op for mock
@@ -86,6 +98,10 @@ export class MockProvider implements ModelProvider {
 
   getModel(): string {
     return this.model;
+  }
+
+  isConfigured(): boolean {
+    return this._configured;
   }
 
   async generate(messages: ModelMessage[], options?: GenerateOptions): Promise<ModelResponse> {
@@ -144,6 +160,8 @@ export class MockProvider implements ModelProvider {
 
 export class ProviderRegistry {
   private providers = new Map<string, () => ModelProvider>();
+  private activeProviderId: string | null = null;
+  private activeModel: string | null = null;
 
   register(factory: () => ModelProvider): void {
     const provider = factory();
@@ -158,13 +176,68 @@ export class ProviderRegistry {
   listIds(): string[] {
     return Array.from(this.providers.keys());
   }
+
+  /** Set the active provider */
+  setActiveProvider(id: string): boolean {
+    if (this.providers.has(id)) {
+      this.activeProviderId = id;
+      return true;
+    }
+    return false;
+  }
+
+  /** Get the active provider ID */
+  getActiveProviderId(): string | null {
+    return this.activeProviderId;
+  }
+
+  /** Set the active model */
+  setActiveModel(model: string): void {
+    this.activeModel = model;
+  }
+
+  /** Get the active model */
+  getActiveModel(): string | null {
+    return this.activeModel;
+  }
+
+  /** Get provider status */
+  getStatus(id: string): ProviderStatus {
+    const provider = this.create(id);
+    if (!provider) return "unavailable";
+    if (provider.isConfigured && !provider.isConfigured()) return "not-configured";
+    return "available";
+  }
 }
 
 /**
- * Create a ProviderRegistry pre-loaded with the mock provider.
+ * Create a ProviderRegistry pre-loaded with available providers.
  */
 export function createDefaultProviderRegistry(): ProviderRegistry {
   const registry = new ProviderRegistry();
+
+  // Always register mock provider
   registry.register(() => new MockProvider());
+
+  // Register OpenAI provider if available
+  try {
+    const { OpenAIProvider } = require("./openai.js") as typeof import("./openai.js");
+    registry.register(() => new OpenAIProvider());
+  } catch {
+    // OpenAI not available — mock only
+  }
+
+  // Set default active provider
+  registry.setActiveProvider("mock");
+
   return registry;
 }
+
+// Re-export OpenAI provider
+export {
+  OpenAIProvider,
+  ProviderNotConfiguredError,
+  ProviderAuthenticationError,
+  ProviderNetworkError,
+} from "./openai.js";
+export type { OpenAIProviderConfig } from "./openai.js";
