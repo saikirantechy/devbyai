@@ -1,18 +1,6 @@
 <div align="center">
 
-<pre>
-██████╗ ███████╗██╗   ██╗██████╗ ██╗   ██╗ █████╗ ██╗
-██╔══██╗██╔════╝██║   ██║██╔══██╗╚██╗ ██╔╝██╔══██╗██║
-██║  ██║█████╗  ██║   ██║██████╔╝ ╚████╔╝ ███████║██║
-██║  ██║██╔══╝  ╚██╗ ██╔╝██╔══██╗  ╚██╔╝  ██╔══██║██║
-██████╔╝███████╗ ╚████╔╝ ██████╔╝   ██║   ██║  ██║██║
-</pre>
-
-# DEVBYAI
-
-### DEV BY AI
-
-**From Idea to Production.**
+<img src="assets/logo.svg" alt="DEVBYAI Logo" width="600">
 
 <br />
 
@@ -657,37 +645,54 @@ But development happens step by step.
 
 ---
 
-## 🔜 v0.2 — Workspace Intelligence
+## ✅ v0.2 — AI Provider & Model System
 
-* [ ] Project detection
-* [ ] Language detection
-* [ ] Framework detection
-* [ ] Package manager detection
-* [ ] Repository analysis
-* [ ] Git awareness
-* [ ] Workspace summaries
-
----
-
-## 🔮 v0.3 — Real AI Integration
-
-* [ ] Real provider integrations
-* [ ] Model configuration
-* [ ] Streaming responses
-* [ ] Tool calling
-* [ ] Context management
+* [x] OpenAI provider integration
+* [x] API key management
+* [x] Provider registry
+* [x] Model listing
+* [x] Streaming responses
+* [x] Provider status display
 
 ---
 
-## 🧠 Future
+## ✅ v0.3 — Agents, Skills, Hooks & Workflows
 
-* [ ] Persistent sessions
-* [ ] Task queue
-* [ ] Specialized agents
-* [ ] Skills system
-* [ ] Hooks
-* [ ] Extension architecture
-* [ ] SDK
+* [x] Agent system (Explorer, Planner, Builder, Reviewer)
+* [x] Skill system (TypeScript, Testing, Code Review, Documentation)
+* [x] Hook system with lifecycle events
+* [x] Workflow system with pattern matching
+* [x] Interactive commands (/agents, /skills, /workflows)
+
+---
+
+## ✅ v0.4 — Project Intelligence
+
+* [x] Project Profile detection
+* [x] File Index with exclusions
+* [x] Context Engine with smart file selection
+* [x] Task Memory with local persistence
+* [x] Session Context management
+* [x] Interactive commands (/project, /map, /context, /history)
+
+---
+
+## 🔜 v0.5 — Debugging & Validation Intelligence
+
+* [ ] Smart error analysis
+* [ ] Test discovery
+* [ ] Build failure context
+* [ ] Debug workflows
+* [ ] Validation engine
+* [ ] Fix suggestions
+
+---
+
+## 🔮 Future
+
+* [ ] Provider & Model Intelligence
+* [ ] Plugin & Extension SDK
+* [ ] Developer Automation
 * [ ] Browser Agent
 * [ ] Browser Extension
 * [ ] VS Code integration
@@ -1044,13 +1049,15 @@ Foundation              ██████████  100%
 
 CLI Architecture        ██████████  100%
 
-Terminal Experience     ████████░░  Complete
+Terminal Experience     ██████████  100%
 
-Workspace Intelligence  ██░░░░░░░░  Planned
+AI Providers            ██████████  100%
 
-AI Providers            ██░░░░░░░░  Planned
+Agents & Skills         ██████████  100%
 
-Agents                  █░░░░░░░░░  Future
+Project Intelligence    ██████████  100%
+
+Debugging & Validation  ████░░░░░░  In Progress
 
 Extensions              █░░░░░░░░░  Future
 
