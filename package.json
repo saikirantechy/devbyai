@@ -1,0 +1,28 @@
+{
+  "name": "devbyai",
+  "private": true,
+  "version": "0.1.0",
+  "description": "DEVBYAI — A free and open-source AI-powered development agent for your terminal.",
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r run build",
+    "dev": "node apps/cli/dist/index.js",
+    "cli": "node apps/cli/dist/index.js",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "typecheck": "pnpm -r run typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "pnpm -r run clean",
+    "doctor": "node apps/cli/dist/index.js doctor",
+    "start": "node apps/cli/dist/index.js"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/node": "^26.4.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

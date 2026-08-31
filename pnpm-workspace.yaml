@@ -1,0 +1,11 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+catalog:
+  tsup: "^8.3.5"
+  typescript: "^5.7.2"
+
+allowBuilds:
+  '@biomejs/biome': true
+  esbuild: true
