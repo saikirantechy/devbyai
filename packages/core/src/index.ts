@@ -38,3 +38,29 @@ export type {
   WorkflowMetadata,
   WorkflowStep,
 } from "./workflows.js";
+
+// Intelligence system
+export {
+  detectProjectProfile,
+  createFileIndex,
+  findFiles,
+  findFilesByDirectory,
+  findFilesByExtension,
+  buildContext,
+  TaskMemory,
+  SessionManager,
+} from "./intelligence/index.js";
+export type {
+  ProjectProfile,
+  ProjectType,
+  PackageManager,
+  WorkspaceType,
+  FileIndex,
+  FileIndexEntry,
+  FileImportance,
+  ContextItem,
+  ContextPackage,
+  TaskRecord,
+  TaskStatus,
+  SessionContext,
+} from "./intelligence/types.js";

@@ -5,11 +5,21 @@
  * Supports slash commands and natural language tasks.
  */
 
+import { execSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 import * as readline from "node:readline";
 import { createBuiltInAgentRegistry } from "@devbyai/agents";
 import { getApiKey, getConfig, loadConfig } from "@devbyai/config";
+import {
+  SessionManager,
+  TaskMemory,
+  WorkflowRegistry,
+  buildContext,
+  createFileIndex,
+  detectProjectProfile,
+} from "@devbyai/core";
 import { Orchestrator } from "@devbyai/core";
-import { WorkflowRegistry } from "@devbyai/core";
 import { createDefaultProviderRegistry } from "@devbyai/models";
 import { createBuiltInSkillRegistry, resolveSkills } from "@devbyai/skills";
 import { createDefaultToolRegistry } from "@devbyai/tools";
@@ -28,12 +38,37 @@ export interface InteractiveOptions {
   cwd: string;
 }
 
-/**
- * Handle /help command.
- */
+// ---------------------------------------------------------------------------
+// Intelligence singletons (per session)
+// ---------------------------------------------------------------------------
+
+let _taskMemory: TaskMemory | null = null;
+let _sessionManager: SessionManager | null = null;
+
+function getTaskMemory(cwd: string): TaskMemory {
+  if (!_taskMemory) _taskMemory = new TaskMemory(cwd);
+  return _taskMemory;
+}
+
+function getSessionManager(cwd: string): SessionManager {
+  if (!_sessionManager) _sessionManager = new SessionManager(cwd);
+  return _sessionManager;
+}
+
+// ---------------------------------------------------------------------------
+// /help
+// ---------------------------------------------------------------------------
+
 function handleHelp(): void {
   console.log();
   console.log(`  ${chalk.bold.white("DEVBYAI COMMANDS")}`);
+  console.log();
+
+  console.log(`    ${chalk.bold.gray("INTELLIGENCE")}`);
+  console.log(`      ${chalk.cyan("/project")}    ${chalk.gray("Show project intelligence")}`);
+  console.log(`      ${chalk.cyan("/context")}    ${chalk.gray("Show current context")}`);
+  console.log(`      ${chalk.cyan("/map")}        ${chalk.gray("Show project map")}`);
+  console.log(`      ${chalk.cyan("/history")}    ${chalk.gray("Show task history")}`);
   console.log();
 
   console.log(`    ${chalk.bold.gray("WORKSPACE")}`);
@@ -67,9 +102,207 @@ function handleHelp(): void {
   console.log();
 }
 
-/**
- * Handle /agents command.
- */
+// ---------------------------------------------------------------------------
+// /project — Project Intelligence
+// ---------------------------------------------------------------------------
+
+function handleProject(options: InteractiveOptions): void {
+  const profile = detectProjectProfile(options.cwd);
+
+  console.log();
+  console.log(sectionHeader("PROJECT INTELLIGENCE"));
+  console.log();
+
+  console.log(`    ${chalk.gray("Name:")}        ${chalk.white.bold(profile.name)}`);
+  console.log(`    ${chalk.gray("Type:")}        ${chalk.white(profile.projectType)}`);
+  console.log(`    ${chalk.gray("Runtime:")}     ${chalk.white(profile.runtime || "N/A")}`);
+  console.log(`    ${chalk.gray("Package Mgr:")} ${chalk.white(profile.packageManager)}`);
+  console.log(`    ${chalk.gray("Workspace:")}   ${chalk.white(profile.workspaceType)}`);
+
+  if (profile.languages.length > 0) {
+    console.log(`    ${chalk.gray("Languages:")}   ${chalk.white(profile.languages.join(", "))}`);
+  }
+  if (profile.frameworks.length > 0) {
+    console.log(`    ${chalk.gray("Frameworks:")}  ${chalk.white(profile.frameworks.join(", "))}`);
+  }
+  if (profile.testFramework) {
+    console.log(`    ${chalk.gray("Testing:")}     ${chalk.white(profile.testFramework)}`);
+  }
+  if (profile.buildSystem) {
+    console.log(`    ${chalk.gray("Build:")}       ${chalk.white(profile.buildSystem)}`);
+  }
+  if (profile.lintSystem) {
+    console.log(`    ${chalk.gray("Lint:")}        ${chalk.white(profile.lintSystem)}`);
+  }
+  if (profile.packageCount > 1) {
+    console.log(`    ${chalk.gray("Packages:")}    ${chalk.white(String(profile.packageCount))}`);
+  }
+  console.log();
+  console.log(
+    `    ${chalk.gray("Sources:")}     ${chalk.white(profile.sourceDirectories.join(", "))}`,
+  );
+  if (profile.testDirectories.length > 0) {
+    console.log(
+      `    ${chalk.gray("Tests:")}       ${chalk.white(profile.testDirectories.join(", "))}`,
+    );
+  }
+  if (profile.configurationFiles.length > 0) {
+    console.log(
+      `    ${chalk.gray("Config:")}      ${chalk.white(profile.configurationFiles.join(", "))}`,
+    );
+  }
+  console.log();
+
+  // Status
+  console.log(`    ${status.success("Project understood")}`);
+  console.log();
+}
+
+// ---------------------------------------------------------------------------
+// /map — Project Map
+// ---------------------------------------------------------------------------
+
+function handleMap(options: InteractiveOptions): void {
+  const index = createFileIndex(options.cwd);
+
+  console.log();
+  console.log(sectionHeader("PROJECT MAP"));
+  console.log();
+
+  // Group top-level directories
+  const topLevel = new Map<string, { files: number; dirs: Set<string> }>();
+
+  for (const file of index.files) {
+    const parts = file.path.split("/");
+    const topDir = parts.length > 1 ? parts[0] : ".";
+
+    if (!topLevel.has(topDir)) {
+      topLevel.set(topDir, { files: 0, dirs: new Set() });
+    }
+    const entry = topLevel.get(topDir);
+    if (entry) {
+      entry.files++;
+
+      if (parts.length > 2) {
+        entry.dirs.add(parts[1]);
+      }
+    }
+  }
+
+  // Sort by importance: source dirs first
+  const sorted = Array.from(topLevel.entries()).sort((a, b) => b[1].files - a[1].files);
+
+  for (const [dir, info] of sorted.slice(0, 15)) {
+    const dirIcon = dir === "." ? chalk.gray(".") : chalk.cyan(dir);
+    console.log(`    ${dirIcon} ${chalk.gray(`(${info.files} files)`)}`);
+
+    // Show subdirectories
+    const subDirs = Array.from(info.dirs).slice(0, 5);
+    for (const sub of subDirs) {
+      console.log(`      ${chalk.gray("├──")} ${chalk.white(sub)}`);
+    }
+    if (info.dirs.size > 5) {
+      console.log(`      ${chalk.gray("└──")} ${chalk.gray(`... and ${info.dirs.size - 5} more`)}`);
+    }
+  }
+
+  console.log();
+
+  // Key files
+  console.log(`    ${chalk.bold.white("KEY FILES")}`);
+  for (const file of index.criticalFiles.slice(0, 8)) {
+    console.log(`      ${chalk.gray("─")} ${chalk.white(file.path)}`);
+  }
+  console.log();
+}
+
+// ---------------------------------------------------------------------------
+// /context — Current Context
+// ---------------------------------------------------------------------------
+
+function handleContext(options: InteractiveOptions): void {
+  const profile = detectProjectProfile(options.cwd);
+  const fileIndex = createFileIndex(options.cwd);
+  const session = getSessionManager(options.cwd);
+
+  // Build context for "current session"
+  const recentFiles = session.getRecentFiles();
+  const context = buildContext("current session", options.cwd, profile, fileIndex, recentFiles);
+
+  console.log();
+  console.log(sectionHeader("CURRENT CONTEXT"));
+  console.log();
+
+  if (context.items.length === 0) {
+    console.log(`    ${chalk.gray("No context items tracked yet.")}`);
+    console.log(`    ${chalk.gray("Submit a task to build context.")}`);
+  } else {
+    for (const item of context.items.slice(0, 10)) {
+      console.log(`    ${chalk.cyan(symbols.bullet)} ${chalk.white(item.path)}`);
+      console.log(
+        `      ${chalk.gray(item.reason)} ${chalk.gray(`(score: ${item.score.toFixed(2)})`)}`,
+      );
+    }
+
+    if (context.truncated) {
+      console.log();
+      console.log(`    ${chalk.gray(`... ${context.items.length - 10} more items`)}`);
+    }
+  }
+
+  console.log();
+  console.log(`    ${chalk.gray("Files tracked:")} ${chalk.white(String(context.items.length))}`);
+  console.log(`    ${chalk.gray("Est. tokens:")}  ${chalk.white(String(context.estimatedTokens))}`);
+  console.log();
+}
+
+// ---------------------------------------------------------------------------
+// /history — Task History
+// ---------------------------------------------------------------------------
+
+function handleHistory(options: InteractiveOptions): void {
+  const memory = getTaskMemory(options.cwd);
+  const recent = memory.getRecent(10);
+
+  console.log();
+  console.log(sectionHeader("RECENT TASKS"));
+  console.log();
+
+  if (recent.length === 0) {
+    console.log(`    ${chalk.gray("No tasks executed yet.")}`);
+    console.log(`    ${chalk.gray("Submit a task to start tracking.")}`);
+  } else {
+    for (const task of recent) {
+      const statusIcon =
+        task.status === "completed"
+          ? chalk.green(symbols.success)
+          : task.status === "failed"
+            ? chalk.red(symbols.error)
+            : task.status === "cancelled"
+              ? chalk.gray(symbols.warning)
+              : chalk.cyan(symbols.running);
+
+      const duration = task.duration ? chalk.gray(`${task.duration}ms`) : chalk.gray("running");
+
+      console.log(
+        `    ${statusIcon} ${chalk.gray(`#${task.id}`)} ${chalk.white(task.description)}`,
+      );
+      console.log(`      ${chalk.gray("Status:")} ${chalk.white(task.status)}  ${duration}`);
+      if (task.workflow) {
+        console.log(`      ${chalk.gray("Workflow:")} ${chalk.white(task.workflow)}`);
+      }
+      console.log();
+    }
+  }
+
+  console.log(`    ${chalk.gray("Total tasks:")} ${chalk.white(String(memory.count()))}`);
+  console.log();
+}
+
+// ---------------------------------------------------------------------------
+// /agents
+// ---------------------------------------------------------------------------
+
 function handleAgents(): void {
   const registry = createBuiltInAgentRegistry();
 
@@ -89,14 +322,14 @@ function handleAgents(): void {
   }
 }
 
-/**
- * Handle /skills command.
- */
+// ---------------------------------------------------------------------------
+// /skills
+// ---------------------------------------------------------------------------
+
 function handleSkills(options: InteractiveOptions): void {
   const registry = createBuiltInSkillRegistry();
   const workspace = detectWorkspace(options.cwd);
 
-  // Determine project type from workspace features
   const hasTypeScript = workspace.features.some((f) => f.name === "TypeScript" && f.detected);
   const projectType = hasTypeScript ? "typescript" : "unknown";
 
@@ -122,9 +355,10 @@ function handleSkills(options: InteractiveOptions): void {
   console.log();
 }
 
-/**
- * Handle /workflows command.
- */
+// ---------------------------------------------------------------------------
+// /workflows
+// ---------------------------------------------------------------------------
+
 function handleWorkflows(): void {
   const registry = new WorkflowRegistry();
 
@@ -141,14 +375,16 @@ function handleWorkflows(): void {
   }
 }
 
-/**
- * Handle /status command.
- */
+// ---------------------------------------------------------------------------
+// /status
+// ---------------------------------------------------------------------------
+
 function handleStatus(options: InteractiveOptions): void {
   const workspace = detectWorkspace(options.cwd);
   const config = getConfig();
   const providerId = config.provider || "mock";
   const apiKey = getApiKey(providerId);
+  const session = getSessionManager(options.cwd);
 
   console.log();
   console.log(sectionHeader("STATUS"));
@@ -166,12 +402,20 @@ function handleStatus(options: InteractiveOptions): void {
   } else {
     console.log(`    ${chalk.gray("Status:")}    ${chalk.yellow("API key not configured")}`);
   }
+
+  // Session info
+  const summary = session.getSummary();
+  console.log(`    ${chalk.gray("Tasks:")}     ${chalk.white(String(summary.taskCount))}`);
+  console.log(
+    `    ${chalk.gray("Duration:")}  ${chalk.white(`${Math.floor(summary.duration / 1000)}s`)}`,
+  );
   console.log();
 }
 
-/**
- * Handle /workspace command.
- */
+// ---------------------------------------------------------------------------
+// /workspace
+// ---------------------------------------------------------------------------
+
 function handleWorkspace(options: InteractiveOptions): void {
   const workspace = detectWorkspace(options.cwd);
 
@@ -195,9 +439,10 @@ function handleWorkspace(options: InteractiveOptions): void {
   console.log();
 }
 
-/**
- * Handle /pipeline command.
- */
+// ---------------------------------------------------------------------------
+// /pipeline
+// ---------------------------------------------------------------------------
+
 function handlePipeline(): void {
   const pipeline = createPipeline(["EXPLORE", "PLAN", "BUILD", "REVIEW", "TEST", "SHIP"]);
 
@@ -210,9 +455,10 @@ function handlePipeline(): void {
   console.log();
 }
 
-/**
- * Handle /models command.
- */
+// ---------------------------------------------------------------------------
+// /models
+// ---------------------------------------------------------------------------
+
 async function handleModels(): Promise<void> {
   const registry = createDefaultProviderRegistry();
   const config = getConfig();
@@ -248,14 +494,11 @@ async function handleModels(): Promise<void> {
   }
 }
 
-/**
- * Handle /doctor command.
- */
-function handleDoctor(): void {
-  const { execSync } = require("node:child_process") as typeof import("node:child_process");
-  const { existsSync } = require("node:fs") as typeof import("node:fs");
-  const { resolve } = require("node:path") as typeof import("node:path");
+// ---------------------------------------------------------------------------
+// /doctor
+// ---------------------------------------------------------------------------
 
+function handleDoctor(): void {
   const cwd = process.cwd();
 
   console.log();
@@ -311,14 +554,25 @@ function handleDoctor(): void {
   const skillRegistry = createBuiltInSkillRegistry();
   console.log(`    ${status.success(`Skills: ${skillRegistry.listIds().length} available`)}`);
 
+  // Intelligence
+  try {
+    const profile = detectProjectProfile(cwd);
+    console.log(`    ${status.success(`Project: ${profile.projectType}`)}`);
+  } catch {
+    console.log(`    ${status.warning("Project: Unable to detect")}`);
+  }
+
   console.log();
 }
 
-/**
- * Execute a natural language task through the pipeline.
- */
+// ---------------------------------------------------------------------------
+// Execute task
+// ---------------------------------------------------------------------------
+
 async function executeTask(task: string, options: InteractiveOptions): Promise<void> {
   const cwd = options.cwd;
+  const session = getSessionManager(cwd);
+  const memory = getTaskMemory(cwd);
 
   await loadConfig(cwd);
 
@@ -353,27 +607,61 @@ async function executeTask(task: string, options: InteractiveOptions): Promise<v
     return;
   }
 
-  // Resolve skills for current project
-  const workspace = detectWorkspace(cwd);
-  const hasTypeScript = workspace.features.some((f) => f.name === "TypeScript" && f.detected);
-  const projectType = hasTypeScript ? "typescript" : "unknown";
+  // Create task
+  const taskRecord = memory.create(task);
+  session.setCurrentTask(taskRecord.id);
+
+  // Resolve workflow
+  const workflowRegistry = new WorkflowRegistry();
+  const workflow = workflowRegistry.selectForTask(task);
+  taskRecord.workflow = workflow.metadata.id;
+  session.setActiveWorkflow(workflow.metadata.id);
+
+  // Resolve skills
+  const profile = detectProjectProfile(cwd);
+  const projectType = profile.projectType === "typescript" ? "typescript" : "unknown";
   const skillRegistry = createBuiltInSkillRegistry();
   const activeSkills = resolveSkills(skillRegistry, projectType);
+  session.setActiveSkills(activeSkills.map((s) => s.metadata.id));
 
-  const tools = createDefaultToolRegistry();
-  const orchestrator = new Orchestrator({ config, provider, tools, cwd });
+  // Build context
+  const fileIndex = createFileIndex(cwd);
+  const recentFiles = session.getRecentFiles();
+  const context = buildContext(task, cwd, profile, fileIndex, recentFiles);
 
+  // Display task info
   console.log();
-  console.log(`    ${chalk.gray("Task:")} ${chalk.white(task)}`);
+  console.log(`    ${chalk.gray("Task:")}     ${chalk.white(task)}`);
+  console.log(`    ${chalk.gray("ID:")}       ${chalk.white(`#${taskRecord.id}`)}`);
+  console.log(`    ${chalk.gray("Workflow:")} ${chalk.cyan(workflow.metadata.name)}`);
   console.log(`    ${chalk.gray("Provider:")} ${chalk.cyan(provider.name)}`);
-  console.log(`    ${chalk.gray("Model:")} ${chalk.white(provider.getModel())}`);
-
+  console.log(`    ${chalk.gray("Model:")}    ${chalk.white(provider.getModel())}`);
   if (activeSkills.length > 0) {
     console.log(
-      `    ${chalk.gray("Skills:")} ${chalk.white(activeSkills.map((s) => s.metadata.name).join(", "))}`,
+      `    ${chalk.gray("Skills:")}   ${chalk.white(activeSkills.map((s) => s.metadata.name).join(", "))}`,
     );
   }
   console.log();
+
+  // Show context selection
+  if (context.items.length > 0) {
+    console.log(`    ${chalk.bold.white("CONTEXT ENGINE")}`);
+    for (const item of context.items.slice(0, 5)) {
+      console.log(
+        `      ${chalk.cyan(symbols.bullet)} ${chalk.white(item.path)} ${chalk.gray(`— ${item.reason}`)}`,
+      );
+    }
+    if (context.items.length > 5) {
+      console.log(`      ${chalk.gray(`... and ${context.items.length - 5} more files`)}`);
+    }
+    console.log();
+  }
+
+  // Update task status
+  memory.updateStatus(taskRecord.id, "exploring");
+
+  const tools = createDefaultToolRegistry();
+  const orchestrator = new Orchestrator({ config, provider, tools, cwd });
 
   // Create pipeline
   const pipeline = createPipeline(["EXPLORE", "PLAN", "BUILD", "REVIEW", "TEST", "SHIP"]);
@@ -383,6 +671,7 @@ async function executeTask(task: string, options: InteractiveOptions): Promise<v
   console.log();
 
   // Execute pipeline
+  memory.updateStatus(taskRecord.id, "planning");
   const result = await orchestrator.execute(task);
 
   // Update pipeline visualization with results
@@ -394,6 +683,9 @@ async function executeTask(task: string, options: InteractiveOptions): Promise<v
       pipeline.error(phaseName, phase.output.split("\n")[0]);
     }
   }
+
+  // Complete task
+  memory.updateStatus(taskRecord.id, result.success ? "completed" : "failed");
 
   // Final pipeline display
   console.log(sectionHeader("RESULT"));
@@ -407,12 +699,16 @@ async function executeTask(task: string, options: InteractiveOptions): Promise<v
     console.log(`    ${status.error(chalk.bold("Task failed"))}`);
   }
   console.log(`    ${chalk.gray("Duration:")} ${chalk.white(`${result.totalDuration}ms`)}`);
+  console.log(`    ${chalk.gray("Task:")}     ${chalk.white(`#${taskRecord.id}`)}`);
   console.log();
+
+  session.setCurrentTask(null);
 }
 
-/**
- * Start the DEVBYAI interactive mode.
- */
+// ---------------------------------------------------------------------------
+// Start interactive mode
+// ---------------------------------------------------------------------------
+
 export async function startInteractive(options: InteractiveOptions): Promise<void> {
   const workspace = detectWorkspace(options.cwd);
   const config = getConfig();
@@ -485,6 +781,18 @@ export async function startInteractive(options: InteractiveOptions): Promise<voi
           break;
         case "/doctor":
           handleDoctor();
+          break;
+        case "/project":
+          handleProject(options);
+          break;
+        case "/map":
+          handleMap(options);
+          break;
+        case "/context":
+          handleContext(options);
+          break;
+        case "/history":
+          handleHistory(options);
           break;
         case "/clear":
           console.clear();
