@@ -13,11 +13,12 @@ describe("ToolRegistry", () => {
     expect(registry.listNames()).toContain("write_file");
     expect(registry.listNames()).toContain("list_directory");
     expect(registry.listNames()).toContain("search_files");
+    expect(registry.listNames()).toContain("run_command");
   });
 
   it("returns all tools", () => {
     const registry = createDefaultToolRegistry();
-    expect(registry.list().length).toBe(4);
+    expect(registry.list().length).toBe(5);
   });
 
   it("returns undefined for unknown tool", () => {

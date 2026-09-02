@@ -4,7 +4,7 @@
  * Defines the core agent abstraction for specialized development roles.
  */
 
-export type AgentRole = "explorer" | "planner" | "builder" | "reviewer" | "researcher";
+export type AgentRole = "explorer" | "planner" | "builder" | "reviewer" | "researcher" | "debugger";
 
 export interface AgentMetadata {
   /** Unique agent identifier */

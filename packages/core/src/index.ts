@@ -64,3 +64,46 @@ export type {
   TaskStatus,
   SessionContext,
 } from "./intelligence/types.js";
+
+// Debug & Validation Intelligence
+export {
+  analyzeErrors,
+  analyzeLogFile,
+  createValidationPlan,
+  discoverTests,
+  findRelevantTests,
+  getTestCommand,
+  runValidation,
+  runSingleCheck,
+  getAvailableChecks,
+  analyzeDebugWorkflows,
+} from "./intelligence/index.js";
+export type {
+  ParsedError,
+  ErrorSuggestion,
+  ErrorAnalysis,
+  ErrorCategory,
+  ErrorSeverity,
+  TestFile,
+  TestSuite,
+  TestDiscoveryResult,
+  TestFramework,
+  ValidationCheck,
+  ValidationResult,
+  ValidationCheckType,
+  ValidationStatus,
+  ValidationMode,
+  ValidationPlan,
+  ValidationRunOptions,
+  DebugWorkflow,
+  DebugStep,
+  DebugAnalysis,
+  QuickFix,
+  DebugContext,
+  DebugWorkflowType,
+} from "./intelligence/index.js";
+
+// Failure Memory & Error Context
+export { FailureMemory } from "./intelligence/index.js";
+export { buildErrorContext, getRelevantFailure } from "./intelligence/index.js";
+export type { FailureRecord, ErrorContext } from "./intelligence/types.js";

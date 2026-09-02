@@ -49,11 +49,12 @@ describe("AgentRegistry", () => {
     const registry = createBuiltInAgentRegistry();
     const metadata = registry.listMetadata();
 
-    expect(metadata.length).toBe(4);
+    expect(metadata.length).toBe(5);
     expect(metadata.some((m) => m.role === "explorer")).toBe(true);
     expect(metadata.some((m) => m.role === "planner")).toBe(true);
     expect(metadata.some((m) => m.role === "builder")).toBe(true);
     expect(metadata.some((m) => m.role === "reviewer")).toBe(true);
+    expect(metadata.some((m) => m.role === "debugger")).toBe(true);
   });
 
   it("should get agents by role", () => {
@@ -66,7 +67,7 @@ describe("AgentRegistry", () => {
 
   it("should return correct count", () => {
     const registry = createBuiltInAgentRegistry();
-    expect(registry.count()).toBe(4);
+    expect(registry.count()).toBe(5);
   });
 });
 

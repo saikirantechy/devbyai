@@ -15,9 +15,17 @@ import {
   SessionManager,
   TaskMemory,
   WorkflowRegistry,
+  analyzeDebugWorkflows,
+  analyzeErrors,
   buildContext,
+  buildErrorContext,
   createFileIndex,
+  createValidationPlan,
   detectProjectProfile,
+  discoverTests,
+  FailureMemory,
+  findRelevantTests,
+  runValidation,
 } from "@devbyai/core";
 import { Orchestrator } from "@devbyai/core";
 import { createDefaultProviderRegistry } from "@devbyai/models";
@@ -44,6 +52,7 @@ export interface InteractiveOptions {
 
 let _taskMemory: TaskMemory | null = null;
 let _sessionManager: SessionManager | null = null;
+let _failureMemory: FailureMemory | null = null;
 
 function getTaskMemory(cwd: string): TaskMemory {
   if (!_taskMemory) _taskMemory = new TaskMemory(cwd);
@@ -53,6 +62,11 @@ function getTaskMemory(cwd: string): TaskMemory {
 function getSessionManager(cwd: string): SessionManager {
   if (!_sessionManager) _sessionManager = new SessionManager(cwd);
   return _sessionManager;
+}
+
+function getFailureMemory(cwd: string): FailureMemory {
+  if (!_failureMemory) _failureMemory = new FailureMemory(cwd);
+  return _failureMemory;
 }
 
 // ---------------------------------------------------------------------------
@@ -69,6 +83,13 @@ function handleHelp(): void {
   console.log(`      ${chalk.cyan("/context")}    ${chalk.gray("Show current context")}`);
   console.log(`      ${chalk.cyan("/map")}        ${chalk.gray("Show project map")}`);
   console.log(`      ${chalk.cyan("/history")}    ${chalk.gray("Show task history")}`);
+  console.log();
+
+    console.log(`    ${chalk.bold.gray("DEBUGGING")}`);
+  console.log(`      ${chalk.cyan("/validate")}   ${chalk.gray("Run validation checks")}`);
+  console.log(`      ${chalk.cyan("/errors")}     ${chalk.gray("Analyze errors")}`);
+  console.log(`      ${chalk.cyan("/failures")}   ${chalk.gray("View recent failure history")}`);
+  console.log(`      ${chalk.cyan("/debug")}      ${chalk.gray("Debug workflows & suggestions")}`);
   console.log();
 
   console.log(`    ${chalk.bold.gray("WORKSPACE")}`);
@@ -297,6 +318,291 @@ function handleHistory(options: InteractiveOptions): void {
 
   console.log(`    ${chalk.gray("Total tasks:")} ${chalk.white(String(memory.count()))}`);
   console.log();
+}
+
+// ---------------------------------------------------------------------------
+// /validate — Run validation checks
+// ---------------------------------------------------------------------------
+
+function handleValidate(options: InteractiveOptions, mode: "quick" | "standard" | "full" = "standard"): void {
+  const profile = detectProjectProfile(options.cwd);
+  const fileIndex = createFileIndex(options.cwd);
+  const failureMemory = getFailureMemory(options.cwd);
+
+  console.log();
+  console.log(sectionHeader("VALIDATION ENGINE"));
+  console.log();
+
+  // Show validation plan
+  const plan = createValidationPlan(profile, mode);
+  console.log(`    ${chalk.gray("Mode:")} ${chalk.white(plan.mode)}`);
+  console.log(`    ${chalk.gray("Checks:")} ${chalk.white(String(plan.totalChecks))}`);
+  console.log();
+  console.log(`    ${chalk.bold.white("PLAN")}`);
+  for (const check of plan.checks) {
+    console.log(`      ${chalk.cyan(symbols.bullet)} ${chalk.white(check.name)} ${chalk.gray(`(${check.command})`)}`);
+  }
+  console.log();
+  console.log(`    ${chalk.gray("Running validation...")}`);
+  console.log();
+
+  // Run validation
+  const result = runValidation({
+    cwd: options.cwd,
+    mode,
+  });
+
+  // Display results
+  for (const check of result.checks) {
+    const icon =
+      check.status === "passed"
+        ? chalk.green(symbols.success)
+        : check.status === "failed"
+          ? chalk.red(symbols.error)
+          : check.status === "skipped"
+            ? chalk.gray(symbols.waiting)
+            : chalk.yellow(symbols.warning);
+
+    const duration = chalk.gray(`${(check.duration / 1000).toFixed(1)}s`);
+    console.log(`    ${icon} ${chalk.white.bold(check.name)} ${duration}`);
+
+    if (check.status === "failed" && check.analysis) {
+      console.log(
+        `      ${chalk.red(`${check.analysis.totalErrors} error(s), ${check.analysis.totalWarnings} warning(s)`)}`,
+      );
+      for (const err of check.analysis.errors.slice(0, 3)) {
+        console.log(`        ${chalk.gray("─")} ${chalk.white(err.message.slice(0, 80))}`);
+      }
+      if (check.analysis.errors.length > 3) {
+        console.log(`        ${chalk.gray(`... and ${check.analysis.errors.length - 3} more`)}`);
+      }
+
+      // Record failure in memory
+      failureMemory.record({
+        type: check.type === "test" ? "test" : check.type === "build" ? "build" : check.type === "typecheck" ? "typecheck" : check.type === "lint" ? "lint" : "unknown",
+        command: check.command,
+        exitCode: check.exitCode,
+        message: `${check.name} failed: ${check.analysis.totalErrors} error(s)`,
+        failedFiles: check.analysis.errors
+          .filter((e) => e.filePath)
+          .map((e) => e.filePath!)
+          .slice(0, 10),
+        relatedFiles: [],
+        taskId: null,
+        rawOutput: check.output.slice(0, 5000),
+      });
+    }
+    console.log();
+  }
+
+  // Summary
+  console.log(`    ${chalk.bold.white("VALIDATION SUMMARY")}`);
+  console.log(`    ${chalk.gray("Run ID:")} ${chalk.white(result.runId)}`);
+  console.log(`    ${chalk.green(`${result.summary.passed} passed`)}`);
+  console.log(`    ${chalk.red(`${result.summary.failed} failed`)}`);
+  console.log(`    ${chalk.yellow(`${result.summary.warnings} warnings`)}`);
+  const totalSeconds = (result.totalDuration / 1000).toFixed(1);
+  console.log(`    ${chalk.gray("Duration:")} ${chalk.white(`${totalSeconds}s`)}`);
+  console.log();
+
+  // Status
+  if (result.status === "passed") {
+    console.log(`    ${status.success(chalk.bold("ALL CHECKS PASSED"))}`);
+  } else {
+    console.log(`    ${status.error(chalk.bold("VALIDATION FAILED"))}`);
+    console.log(`    ${chalk.gray("Run")} ${chalk.cyan("/debug")} ${chalk.gray("to investigate.")}`);
+  }
+  console.log();
+}
+
+// ---------------------------------------------------------------------------
+// /errors — Analyze recent errors
+// ---------------------------------------------------------------------------
+
+function handleErrors(options: InteractiveOptions): void {
+  const profile = detectProjectProfile(options.cwd);
+  const fileIndex = createFileIndex(options.cwd);
+
+  console.log();
+  console.log(sectionHeader("ERROR ANALYSIS"));
+  console.log();
+
+  // Run validation to get errors
+  const result = runValidation(options.cwd, profile, fileIndex);
+
+  // Collect all errors
+  const allErrors = result.checks
+    .filter((c) => c.analysis)
+    .flatMap((c) => c.analysis?.errors ?? []);
+
+  if (allErrors.length === 0) {
+    console.log(`    ${chalk.green(symbols.success)} ${chalk.white("No errors found!")}`);
+    console.log();
+    return;
+  }
+
+  // Group by category
+  const byCategory = new Map<string, typeof allErrors>();
+  for (const err of allErrors) {
+    const cat = err.category;
+    if (!byCategory.has(cat)) byCategory.set(cat, []);
+    byCategory.get(cat)?.push(err);
+  }
+
+  for (const [category, errors] of byCategory) {
+    console.log(
+      `    ${chalk.bold.white(category.toUpperCase())} ${chalk.gray(`(${errors.length})`)}`,
+    );
+    for (const err of errors.slice(0, 5)) {
+      const location = err.filePath ? chalk.gray(`${err.filePath}:${err.line || "?"}`) : "";
+      console.log(`      ${chalk.gray("─")} ${chalk.white(err.message.slice(0, 70))}`);
+      if (location) console.log(`        ${location}`);
+    }
+    if (errors.length > 5) {
+      console.log(`      ${chalk.gray(`... and ${errors.length - 5} more`)}`);
+    }
+    console.log();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// /failures — Failure history
+// ---------------------------------------------------------------------------
+
+function handleFailures(options: InteractiveOptions): void {
+  const failureMemory = getFailureMemory(options.cwd);
+
+  console.log();
+  console.log(sectionHeader("FAILURE HISTORY"));
+  console.log();
+
+  const failures = failureMemory.getRecent(10);
+
+  if (failures.length === 0) {
+    console.log(`    ${chalk.green(symbols.success)} ${chalk.white("No recent failures recorded.")}`);
+    console.log();
+    return;
+  }
+
+  // Group by type
+  const byType = new Map<string, typeof failures>();
+  for (const f of failures) {
+    const type = f.type;
+    if (!byType.has(type)) byType.set(type, []);
+    byType.get(type)?.push(f);
+  }
+
+  for (const [type, typeFailures] of byType) {
+    console.log(`    ${chalk.bold.white(type.toUpperCase())} ${chalk.gray(`(${typeFailures.length})`)}`);
+    for (const f of typeFailures.slice(0, 3)) {
+      const time = new Date(f.timestamp).toLocaleTimeString();
+      console.log(`      ${chalk.red(symbols.error)} ${chalk.white(f.message.slice(0, 60))}`);
+      console.log(`        ${chalk.gray("Time:")} ${chalk.white(time)}  ${chalk.gray("ID:")} ${chalk.white(f.id)}`);
+      if (f.command) {
+        console.log(`        ${chalk.gray("Command:")} ${chalk.cyan(f.command)}`);
+      }
+      if (f.failedFiles.length > 0) {
+        console.log(`        ${chalk.gray("Files:")} ${chalk.white(f.failedFiles.slice(0, 3).join(", "))}`);
+      }
+    }
+    if (typeFailures.length > 3) {
+      console.log(`        ${chalk.gray(`... and ${typeFailures.length - 3} more`)}`);
+    }
+    console.log();
+  }
+
+  console.log(`    ${chalk.gray("Total failures recorded:")} ${chalk.white(String(failureMemory.count()))}`);
+  console.log();
+
+  const affectedFiles = failureMemory.getAffectedFiles();
+  if (affectedFiles.length > 0) {
+    console.log(`    ${chalk.gray("Affected files:")} ${chalk.white(String(affectedFiles.length))}`);
+    console.log();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// /debug — Debug workflows
+// ---------------------------------------------------------------------------
+
+function handleDebug(options: InteractiveOptions): void {
+  const profile = detectProjectProfile(options.cwd);
+  const fileIndex = createFileIndex(options.cwd);
+
+  console.log();
+  console.log(sectionHeader("DEBUG ANALYSIS"));
+  console.log();
+
+  // Run validation to get errors
+  const validation = runValidation(options.cwd, profile, fileIndex);
+
+  // Analyze errors
+  const allErrors = validation.checks
+    .filter((c) => c.analysis)
+    .flatMap((c) => c.analysis?.errors ?? []);
+
+  const errorAnalysis = analyzeErrors(allErrors.map((e) => e.raw).join("\n"), options.cwd);
+
+  // Discover tests
+  const testDiscovery = discoverTests(options.cwd, profile, fileIndex);
+
+  // Generate debug workflows
+  const debugResult = analyzeDebugWorkflows(
+    errorAnalysis,
+    profile,
+    fileIndex,
+    testDiscovery,
+    validation,
+  );
+
+  // Health score
+  const healthColor =
+    debugResult.context.healthScore >= 80
+      ? chalk.green
+      : debugResult.context.healthScore >= 50
+        ? chalk.yellow
+        : chalk.red;
+
+  console.log(
+    `    ${chalk.gray("Health Score:")} ${healthColor.bold(String(debugResult.context.healthScore))}/100`,
+  );
+  console.log();
+
+  // Quick fixes
+  if (debugResult.quickFixes.length > 0) {
+    console.log(`    ${chalk.bold.white("QUICK FIXES")}`);
+    for (const fix of debugResult.quickFixes) {
+      console.log(`      ${chalk.green(symbols.bullet)} ${chalk.white(fix.description)}`);
+      console.log(`        ${chalk.gray("Command:")} ${chalk.cyan(fix.command)}`);
+    }
+    console.log();
+  }
+
+  // Debug workflows
+  if (debugResult.workflows.length > 0) {
+    console.log(`    ${chalk.bold.white("DEBUG WORKFLOWS")}`);
+    for (const workflow of debugResult.workflows.slice(0, 3)) {
+      console.log(`      ${chalk.cyan(symbols.bullet)} ${chalk.white.bold(workflow.title)}`);
+      console.log(`        ${chalk.gray(workflow.description)}`);
+      console.log();
+
+      for (const step of workflow.steps.slice(0, 3)) {
+        console.log(`        ${chalk.gray(`${step.step}.`)} ${chalk.white(step.title)}`);
+        if (step.command) {
+          console.log(`           ${chalk.gray("Run:")} ${chalk.cyan(step.command)}`);
+        }
+      }
+      if (workflow.steps.length > 3) {
+        console.log(`        ${chalk.gray(`... and ${workflow.steps.length - 3} more steps`)}`);
+      }
+      console.log();
+    }
+  } else {
+    console.log(
+      `    ${chalk.green(symbols.success)} ${chalk.white("No issues detected. Project looks healthy!")}`,
+    );
+    console.log();
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -793,6 +1099,23 @@ export async function startInteractive(options: InteractiveOptions): Promise<voi
           break;
         case "/history":
           handleHistory(options);
+          break;
+        case "/validate": {
+          const modeArg = trimmed.split(" ")[1]?.toLowerCase();
+          const validateMode = (modeArg === "quick" || modeArg === "full" || modeArg === "standard")
+            ? modeArg
+            : "standard";
+          handleValidate(options, validateMode);
+          break;
+        }
+        case "/failures":
+          handleFailures(options);
+          break;
+        case "/errors":
+          handleErrors(options);
+          break;
+        case "/debug":
+          handleDebug(options);
           break;
         case "/clear":
           console.clear();

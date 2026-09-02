@@ -64,3 +64,37 @@ Tools are self-contained units with:
 - An execute function
 
 Built-in tools: `read_file`, `write_file`, `list_directory`, `search_files`
+
+## Validation Engine
+
+The Validation Engine coordinates build, test, lint, and typecheck validation:
+
+- **Discovery**: Detects applicable checks from Project Intelligence
+- **Planning**: Creates validation plans based on mode (quick/standard/full)
+- **Execution**: Runs discovered checks safely via Command Runner
+- **Analysis**: Parses errors and generates suggestions via Error Analysis
+- **Memory**: Records failures in Failure Memory for debugging context
+
+### Validation Modes
+
+| Mode | Checks | Use Case |
+|------|--------|----------|
+| `quick` | typecheck, test | Fast feedback |
+| `standard` | typecheck, lint, test, build | Default validation |
+| `full` | all applicable checks | Pre-deployment |
+
+### Debug Intelligence Pipeline
+
+```
+Error → Failure Analyzer → Error Context → Related Files → Debug Agent
+```
+
+The Debug Agent analyzes failures, finds related files, and suggests fixes based on error patterns and failure history.
+
+### Failure Memory
+
+Recent failures are persisted to `.devbyai/failures/` with structured metadata:
+- Failure type, command, exit code
+- Failed files and related files
+- Raw output (truncated for safety)
+- Maximum 20 records retained

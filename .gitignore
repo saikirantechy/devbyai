@@ -24,3 +24,7 @@ pnpm-lock.yaml
 
 # Refact tooling
 .refact/
+
+# DEVBYAI runtime
+.devbyai/
+.snapshots/

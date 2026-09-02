@@ -195,3 +195,47 @@ export interface SessionContext {
   /** Task count in this session */
   taskCount: number;
 }
+
+// ---------------------------------------------------------------------------
+// Failure Memory
+// ---------------------------------------------------------------------------
+
+export interface FailureRecord {
+  /** Unique failure ID */
+  id: string;
+  /** Failure type: build, test, typecheck, lint, runtime, unknown */
+  type: "build" | "test" | "typecheck" | "lint" | "runtime" | "unknown";
+  /** Command that was run (if applicable) */
+  command: string | null;
+  /** Exit code (if applicable) */
+  exitCode: number | null;
+  /** Error message summary */
+  message: string;
+  /** Failed files */
+  failedFiles: string[];
+  /** Related source files */
+  relatedFiles: string[];
+  /** Timestamp */
+  timestamp: number;
+  /** Task ID that produced this failure (if any) */
+  taskId: string | null;
+  /** Raw output (truncated to safe limit) */
+  rawOutput: string;
+}
+
+// ---------------------------------------------------------------------------
+// Error Context
+// ---------------------------------------------------------------------------
+
+export interface ErrorContext {
+  /** Latest failure record */
+  latestFailure: FailureRecord | null;
+  /** Recent failures (most recent first) */
+  recentFailures: FailureRecord[];
+  /** Total failure count */
+  totalFailures: number;
+  /** Failure categories present */
+  failureTypes: string[];
+  /** Affected files across failures */
+  affectedFiles: string[];
+}

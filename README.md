@@ -134,6 +134,19 @@ DEVBYAI is built around development phases.
 | 🧪 **Test**     | Validate implementation and detect issues        |
 | 🚀 **Ship**     | Prepare software for production workflows        |
 
+## ✅ Validation & Debugging Intelligence
+
+DEVBYAI includes a powerful validation engine and debugging intelligence:
+
+* **Enhanced Validation Engine** — Quick/standard/full modes, validation plans, and run IDs
+* **Command Runner Tool** — Safe shell execution within workspace boundaries
+* **Failure Memory** — Persistent failure tracking with retention limits
+* **Error Context** — Structured failure context to power the Debug Agent
+* **Test Intelligence** — Relevant test discovery and test command generation
+* **Debug Agent** — Analyzes failures and suggests fixes from failure history
+* **`/validate` command** — Plan display, mode support, and duration tracking
+* **`/failures` command** — Instantly review failure history
+
 ---
 
 ## 💻 Terminal First
@@ -677,14 +690,28 @@ But development happens step by step.
 
 ---
 
-## 🔜 v0.5 — Debugging & Validation Intelligence
+## ✅ v0.5 — Debugging & Validation Intelligence
 
-* [ ] Smart error analysis
-* [ ] Test discovery
-* [ ] Build failure context
-* [ ] Debug workflows
-* [ ] Validation engine
-* [ ] Fix suggestions
+* [x] Smart error analysis
+* [x] Test discovery
+* [x] Build failure context
+* [x] Debug workflows
+* [x] Validation engine
+* [x] Fix suggestions
+
+---
+
+## ✅ v0.6 — Enhanced Debugging & Validation
+
+* [x] Enhanced Validation Engine (quick/standard/full modes, validation plans, run IDs)
+* [x] Command Runner Tool (safe shell execution)
+* [x] Failure Memory (persistent failure tracking)
+* [x] Error Context (structured failure context)
+* [x] Enhanced Test Intelligence (relevant test discovery, test command generation)
+* [x] Debug Agent enhancement (role fix, validation context awareness)
+* [x] Enhanced /validate command (plan display, mode support, duration tracking)
+* [x] /failures command (failure history)
+* [x] Comprehensive test suite (211 tests)
 
 ---
 
@@ -1057,7 +1084,7 @@ Agents & Skills         ██████████  100%
 
 Project Intelligence    ██████████  100%
 
-Debugging & Validation  ████░░░░░░  In Progress
+Debugging & Validation  ██████████  100%
 
 Extensions              █░░░░░░░░░  Future
 

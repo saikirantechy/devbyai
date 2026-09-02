@@ -4,35 +4,19 @@
  * Defines the base Tool interface and provides built-in filesystem tools.
  */
 
+import { CommandRunnerTool } from "./command-runner.js";
+export { CommandRunnerTool } from "./command-runner.js";
+export type { CommandResult } from "./command-runner.js";
+
+import type { Tool, ToolInput, ToolResult, ToolPermission } from "./types.js";
+
+export type { ToolPermission, ToolInput, ToolResult, Tool } from "./types.js";
+
 // ---------------------------------------------------------------------------
 // Core Tool Interface
 // ---------------------------------------------------------------------------
 
-export type ToolPermission = "read" | "write" | "execute" | "network" | "dangerous";
-
-export interface ToolInput {
-  [key: string]: unknown;
-}
-
-export interface ToolResult {
-  success: boolean;
-  output: string;
-  error?: string;
-}
-
-export interface Tool {
-  /** Unique tool name */
-  name: string;
-  /** Human-readable description */
-  description: string;
-  /** Permission(s) required to run this tool */
-  permissions: ToolPermission[];
-  /** JSON Schema for the tool's input */
-  inputSchema: Record<string, unknown>;
-
-  /** Execute the tool with the given input */
-  execute(input: ToolInput): Promise<ToolResult>;
-}
+// types are re-exported from ./types.js above
 
 // ---------------------------------------------------------------------------
 // Built-in: ReadFile
@@ -226,5 +210,6 @@ export function createDefaultToolRegistry(): ToolRegistry {
   registry.register(new WriteFileTool());
   registry.register(new ListDirectoryTool());
   registry.register(new SearchFilesTool());
+  registry.register(new CommandRunnerTool());
   return registry;
 }
