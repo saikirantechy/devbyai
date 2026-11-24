@@ -1,0 +1,66 @@
+# Developer Resources
+
+Professional coding resources for contributing to **DEVBYAI** — the open-source AI-powered development agent.
+
+This folder contains everything a contributor needs to write code, add features, and submit pull requests that match the project's standards.
+
+---
+
+## 📑 Coding Guides
+
+| Guide | What you'll learn |
+|-------|-------------------|
+| [`environment-setup.md`](environment-setup.md) | Install deps, build, and run `devbyai` globally from any terminal |
+| [`coding-standards.md`](coding-standards.md) | TypeScript/ESM conventions, Biome formatting, commit style |
+| [`api-reference.md`](api-reference.md) | Quick reference for all `@devbyai/*` packages |
+| [`writing-tests.md`](writing-tests.md) | Vitest test patterns for tools, agents, skills |
+| [`adding-a-tool.md`](adding-a-tool.md) | Add a new filesystem/system tool |
+| [`adding-a-provider.md`](adding-a-provider.md) | Add a new AI model provider |
+| [`adding-an-agent.md`](adding-an-agent.md) | Add a new specialized agent |
+| [`adding-a-skill.md`](adding-a-skill.md) | Add a new reusable skill |
+| [`adding-a-command.md`](adding-a-command.md) | Add a new CLI command |
+| [`adding-a-hook.md`](adding-a-hook.md) | Add a pipeline lifecycle hook |
+| [`adding-a-workflow.md`](adding-a-workflow.md) | Add a phase workflow |
+| [`config-guide.md`](config-guide.md) | Configuration system (`devbyai.json`) |
+| [`git-workflow.md`](git-workflow.md) | Git workflow for forks, branches, and PRs |
+| [`pr-checklist.md`](pr-checklist.md) | Pre-submission checklist |
+
+---
+
+## 🧭 Getting Started (Coding First)
+
+1. **Fork & clone** — see [`git-workflow.md`](git-workflow.md).
+2. **Install & build** — `pnpm install && pnpm build`.
+3. **Pick a coding guide** above based on what you want to build.
+4. **Write code + tests** following [`coding-standards.md`](coding-standards.md).
+5. **Run checks** — `pnpm lint && pnpm typecheck && pnpm test`.
+6. **Open a PR** — see [`pr-checklist.md`](pr-checklist.md).
+
+---
+
+## 🏗️ Codebase at a Glance
+
+```
+devbyai/
+├── apps/cli/          # Terminal CLI (commander-based)
+├── packages/
+│   ├── core/          # Orchestrator, pipeline, intelligence
+│   ├── config/        # Configuration management
+│   ├── models/        # AI provider abstractions
+│   ├── tools/         # Agent tool system
+│   ├── ui/            # Terminal design system
+│   ├── agents/        # Specialized agents
+│   ├── skills/        # Reusable skills
+│   └── sdk/           # Developer SDK
+└── resources/         # Contributor resources (this folder)
+```
+
+All packages use **TypeScript strict mode**, **ESM**, **Biome** (lint/format), **Vitest** (tests), and **tsup** (builds).
+
+---
+
+## 🤝 Contributing Code
+
+By submitting code, you agree your contributions are licensed under the [MIT License](https://opensource.org/licenses/MIT). Please read the [Code of Conduct](../CODE_OF_CONDUCT.md) if one exists at the repo root.
+
+Questions? Open a [Discussion](https://github.com/saikirantechy/devbyai/discussions) or comment on an issue.

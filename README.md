@@ -976,6 +976,40 @@ before contributing.
 
 ---
 
+# 📚 Developer Resources
+
+A dedicated [`resources/`](resources/) folder contains coding-focused guides for contributors who want to write code and add features.
+
+| Resource | Description |
+|----------|-------------|
+| [`coding-standards.md`](resources/coding-standards.md) | TypeScript/ESM conventions, Biome formatting, commit style |
+| [`api-reference.md`](resources/api-reference.md) | Quick reference for all `@devbyai/*` packages |
+| [`writing-tests.md`](resources/writing-tests.md) | Vitest test patterns for tools, agents, skills |
+| [`adding-a-tool.md`](resources/adding-a-tool.md) | Add a new filesystem/system tool |
+| [`adding-a-provider.md`](resources/adding-a-provider.md) | Add a new AI model provider |
+| [`adding-an-agent.md`](resources/adding-an-agent.md) | Add a new specialized agent |
+| [`adding-a-skill.md`](resources/adding-a-skill.md) | Add a new reusable skill |
+| [`adding-a-command.md`](resources/adding-a-command.md) | Add a new CLI command |
+| [`adding-a-hook.md`](resources/adding-a-hook.md) | Add a pipeline lifecycle hook |
+| [`adding-a-workflow.md`](resources/adding-a-workflow.md) | Add a phase workflow |
+| [`config-guide.md`](resources/config-guide.md) | Configuration system (`devbyai.json`) |
+| [`git-workflow.md`](resources/git-workflow.md) | Git workflow for forks, branches, and PRs |
+| [`pr-checklist.md`](resources/pr-checklist.md) | Pre-submission checklist |
+
+### Recommended flow for new users
+
+1. Clone the repo: `git clone https://github.com/saikirantechy/devbyai.git`
+2. Follow [`resources/environment-setup.md`](resources/environment-setup.md) to install deps, build, and run `devbyai` globally.
+3. Fork & clone your fork (see [`resources/git-workflow.md`](resources/git-workflow.md)).
+4. Pick a coding guide above based on what you want to build.
+5. Write code + tests following [`resources/coding-standards.md`](resources/coding-standards.md).
+6. Run checks: `pnpm lint && pnpm typecheck && pnpm test`.
+7. Open a PR against `https://github.com/saikirantechy/devbyai.git` → `main`.
+
+All code contributions are licensed under the [MIT License](https://opensource.org/licenses/MIT).
+
+---
+
 # 🛡️ Security
 
 Security is important.
