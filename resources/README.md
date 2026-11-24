@@ -27,6 +27,26 @@ This folder contains everything a contributor needs to write code, add features,
 
 ---
 
+## 🏗️ Architecture — AI Coding Platform
+
+| Guide | Description |
+|-------|-------------|
+| [`architecture/README.md`](architecture/README.md) | Overview of the AI coding platform architecture |
+| [`architecture/product-vision.md`](architecture/product-vision.md) | Product vision and positioning |
+| [`architecture/high-level-architecture.md`](architecture/high-level-architecture.md) | System architecture overview |
+| [`architecture/ai-model-hub.md`](architecture/ai-model-hub.md) | Model hub, provider adapters, shared access & BYOK |
+| [`architecture/coding-agent.md`](architecture/coding-agent.md) | Coding agent workflow, tools, and safe execution |
+| [`architecture/github-integration.md`](architecture/github-integration.md) | GitHub integration for open-source contributions |
+| [`architecture/backend-services.md`](architecture/backend-services.md) | Backend services, database, and API design |
+| [`architecture/technology-stack.md`](architecture/technology-stack.md) | Recommended technology choices |
+| [`architecture/roadmap.md`](architecture/roadmap.md) | Phased development roadmap |
+| [`architecture/usage-limits.md`](architecture/usage-limits.md) | Free-tier limits and usage strategy |
+| [`architecture/testing-strategy.md`](architecture/testing-strategy.md) | Testing strategy and security |
+| [`architecture/important-decisions.md`](architecture/important-decisions.md) | Key decisions before implementation |
+
+---
+
+
 ## 🧭 Getting Started (Coding First)
 
 1. **Fork & clone** — see [`git-workflow.md`](git-workflow.md).
