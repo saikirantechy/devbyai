@@ -995,6 +995,10 @@ A dedicated [`resources/`](resources/) folder contains coding-focused guides for
 | [`config-guide.md`](resources/config-guide.md) | Configuration system (`devbyai.json`) |
 | [`git-workflow.md`](resources/git-workflow.md) | Git workflow for forks, branches, and PRs |
 | [`pr-checklist.md`](resources/pr-checklist.md) | Pre-submission checklist |
+| [`control-tools-system.md`](resources/control-tools-system.md) | Control, register, and secure tools |
+| [`adding-user-models.md`](resources/adding-user-models.md) | Add custom AI models |
+| [`adding-user-providers.md`](resources/adding-user-providers.md) | Add custom AI providers |
+| [`advanced-features.md`](resources/advanced-features.md) | Hooks, workflows, skills, agents, CLI commands |
 | [`architecture/README.md`](resources/architecture/README.md) | AI coding platform architecture (12 guides) |
 
 ### Recommended flow for new users

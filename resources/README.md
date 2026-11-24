@@ -24,6 +24,10 @@ This folder contains everything a contributor needs to write code, add features,
 | [`config-guide.md`](config-guide.md) | Configuration system (`devbyai.json`) |
 | [`git-workflow.md`](git-workflow.md) | Git workflow for forks, branches, and PRs |
 | [`pr-checklist.md`](pr-checklist.md) | Pre-submission checklist |
+| [`control-tools-system.md`](control-tools-system.md) | Control, register, and secure the tools system |
+| [`adding-user-models.md`](adding-user-models.md) | Add custom AI models |
+| [`adding-user-providers.md`](adding-user-providers.md) | Add custom AI model providers |
+| [`advanced-features.md`](advanced-features.md) | Hooks, workflows, skills, agents, CLI commands |
 
 ---
 
