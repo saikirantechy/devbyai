@@ -63,6 +63,8 @@ This folder contains everything a contributor needs to write code, add features,
 | [`skills/skill-installation.md`](skills/skill-installation.md) | Which skills are required for each tool + installation |
 | [`skills/app-web-dev-skills.md`](skills/app-web-dev-skills.md) | App, website, web app dev skills |
 | [`skills/agent-skills.md`](skills/agent-skills.md) | Reusable agent skill bundles |
+| [`skills/code-review/README.md`](skills/code-review/README.md) | Advanced code review skills with tool support |
+| [`skills/report-generator/README.md`](skills/report-generator/README.md) | Report generator skills (audit, tests, coverage, deps, health) |
 
 ---
 

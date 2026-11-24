@@ -1004,6 +1004,8 @@ A dedicated [`resources/`](resources/) folder contains coding-focused guides for
 | [`skills/app-web-dev-skills.md`](resources/skills/app-web-dev-skills.md) | App, website, web app dev skills |
 | [`skills/agent-skills.md`](resources/skills/agent-skills.md) | Reusable agent skill bundles |
 | [`skills-system/README.md`](resources/skills-system/README.md) | Skills system technical design (14 sections) |
+| [`skills/code-review/README.md`](resources/skills/code-review/README.md) | Advanced code review skills with tool support |
+| [`skills/report-generator/README.md`](resources/skills/report-generator/README.md) | Report generator skills (audit, tests, coverage, deps, health) |
 
 ### Recommended flow for new users
 

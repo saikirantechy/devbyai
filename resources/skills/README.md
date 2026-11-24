@@ -16,6 +16,8 @@ DEVBYAI skills provide reusable development knowledge that agents can use when w
 | [`app-web-dev-skills.md`](app-web-dev-skills.md) | App, website, and web app development skills |
 | [`agent-skills.md`](agent-skills.md) | Reusable agent skill bundles (SKILL.md pattern) |
 | [`skill-installation.md`](skill-installation.md) | Which skills are required for each tool |
+| [`skills/code-review/README.md`](code-review/README.md) | Advanced code review skills with tool support |
+| [`skills/report-generator/README.md`](report-generator/README.md) | Report generator skills (audit, tests, coverage, deps, health) |
 
 ---
 
