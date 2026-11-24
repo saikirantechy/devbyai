@@ -61,6 +61,30 @@ This folder contains everything a contributor needs to write code, add features,
 | [`skills/format-dev-skills.md`](skills/format-dev-skills.md) | Code formatting skills (formatting, imports, naming, lint) |
 | [`skills/security-skills.md`](skills/security-skills.md) | Security skills (audit, secure coding, secret management, OWASP) |
 | [`skills/skill-installation.md`](skills/skill-installation.md) | Which skills are required for each tool + installation |
+| [`skills/app-web-dev-skills.md`](skills/app-web-dev-skills.md) | App, website, web app dev skills |
+| [`skills/agent-skills.md`](skills/agent-skills.md) | Reusable agent skill bundles |
+
+---
+
+## 🏗️ Skills System — Technical Design
+
+| Guide | Description |
+|-------|-------------|
+| [`skills-system/README.md`](skills-system/README.md) | Overview of the skills system design |
+| [`skills-system/system-overview.md`](skills-system/system-overview.md) | Architecture, components, main responsibilities |
+| [`skills-system/skill-format.md`](skills-system/skill-format.md) | Open `SKILL.md` convention + DevByAI manifest |
+| [`skills-system/database-schema.md`](skills-system/database-schema.md) | PostgreSQL tables and relationships |
+| [`skills-system/skills-registry.md`](skills-system/skills-registry.md) | Registration, discovery, versioning, publishing |
+| [`skills-system/skill-loader.md`](skills-system/skill-loader.md) | Loading lifecycle, lazy loading, caching |
+| [`skills-system/agent-integration.md`](skills-system/agent-integration.md) | Orchestration pipeline, discovery, context |
+| [`skills-system/security-architecture.md`](skills-system/security-architecture.md) | Trust levels, permissions, sandbox, audit |
+| [`skills-system/marketplace.md`](skills-system/marketplace.md) | Screens, API design, recommendation |
+| [`skills-system/implementation-plan.md`](skills-system/implementation-plan.md) | 7-phase roadmap |
+| [`skills-system/first-skills.md`](skills-system/first-skills.md) | 12 starter skills |
+| [`skills-system/testing-acceptance.md`](skills-system/testing-acceptance.md) | Acceptance criteria and benchmarks |
+| [`skills-system/technical-boundaries.md`](skills-system/technical-boundaries.md) | Module separation recommendations |
+| [`skills-system/references.md`](skills-system/references.md) | Specifications and references |
+| [`skills-system/final-recommendation.md`](skills-system/final-recommendation.md) | Recommended direction and next steps |
 
 ---
 
