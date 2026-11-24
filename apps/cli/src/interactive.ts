@@ -872,6 +872,196 @@ function handleDoctor(): void {
 }
 
 // ---------------------------------------------------------------------------
+// / — Command Palette (professional slash command UI)
+// ---------------------------------------------------------------------------
+
+interface SlashCommand {
+  id: string;
+  label: string;
+  desc: string;
+  example?: string;
+}
+
+interface SlashCategory {
+  name: string;
+  icon: string;
+  commands: SlashCommand[];
+}
+
+const SLASH_CATEGORIES: SlashCategory[] = [
+  {
+    name: "INTELLIGENCE",
+    icon: "🧠",
+    commands: [
+      { id: "/project", label: "/project", desc: "Show project intelligence & profile" },
+      { id: "/context", label: "/context", desc: "Show current AI context & tracked files" },
+      { id: "/map", label: "/map", desc: "Show project file map & structure" },
+      { id: "/history", label: "/history", desc: "Show recent task execution history" },
+    ],
+  },
+  {
+    name: "DEBUGGING",
+    icon: "🐛",
+    commands: [
+      { id: "/validate", label: "/validate [mode]", desc: "Run validation checks (quick / standard / full)", example: "/validate quick" },
+      { id: "/errors", label: "/errors", desc: "Analyze recent errors grouped by category" },
+      { id: "/failures", label: "/failures", desc: "View recent failure history & affected files" },
+      { id: "/debug", label: "/debug", desc: "Full debug analysis: health score, fixes & workflows" },
+    ],
+  },
+  {
+    name: "WORKSPACE",
+    icon: "📁",
+    commands: [
+      { id: "/workspace", label: "/workspace", desc: "Show workspace name, location & detected features" },
+      { id: "/status", label: "/status", desc: "Show version, provider, model & session status" },
+      { id: "/pipeline", label: "/pipeline", desc: "Show the development pipeline phases" },
+    ],
+  },
+  {
+    name: "AGENTS & SKILLS",
+    icon: "🤖",
+    commands: [
+      { id: "/agents", label: "/agents", desc: "List all available built-in agents & capabilities" },
+      { id: "/skills", label: "/skills", desc: "List active skills for current project type" },
+      { id: "/workflows", label: "/workflows", desc: "List available phase workflows" },
+    ],
+  },
+  {
+    name: "AI MODELS",
+    icon: "🧠",
+    commands: [
+      { id: "/models", label: "/models", desc: "View configured AI providers & available models" },
+    ],
+  },
+  {
+    name: "SYSTEM",
+    icon: "🛠️",
+    commands: [
+      { id: "/doctor", label: "/doctor", desc: "Check environment, Node, pnpm & provider status" },
+      { id: "/clear", label: "/clear", desc: "Clear the terminal screen" },
+      { id: "/help", label: "/help", desc: "Show all available commands" },
+      { id: "/exit", label: "/exit", desc: "Exit DEVBYAI interactive mode" },
+      { id: "/update", label: "/update", desc: "Update DEVBYAI to latest version (pull, install, build)" },
+    ],
+  },
+];
+
+function padRight(text: string, len: number): string {
+  return text + " ".repeat(Math.max(0, len - text.length));
+}
+
+function handleSlashPalette(): void {
+  const labelWidth = 20;
+  const descWidth = 52;
+  const rowWidth = labelWidth + descWidth + 4;
+
+  const top = "═".repeat(rowWidth);
+  const headerLine = "│";
+  const mid = "─".repeat(rowWidth);
+
+  console.log();
+  console.log(chalk.bold.white(top));
+  console.log(`  ${chalk.bold.white("DEVBYAI COMMAND PALETTE")}`);
+  console.log(chalk.bold.white(top));
+  console.log();
+
+  for (const category of SLASH_CATEGORIES) {
+    // Category header
+    console.log(`  ${chalk.cyan(category.icon)} ${chalk.bold.white(category.name)}`);
+    console.log(`  ┌${"─".repeat(labelWidth)}┬${"─".repeat(descWidth)}┐`);
+
+    for (const cmd of category.commands) {
+      const label = padRight(cmd.label, labelWidth);
+      const desc = padRight(cmd.desc, descWidth);
+      const example = cmd.example ? `  ${chalk.gray("e.g. " + cmd.example)}` : "";
+      console.log(
+        `  │ ${chalk.cyan.bold(label)} │ ${chalk.white(desc)}│${example}`,
+      );
+    }
+
+    console.log(`  └${"─".repeat(labelWidth)}┴${"─".repeat(descWidth)}┘`);
+    console.log();
+  }
+
+  console.log(`  ${chalk.bold.gray("NATURAL LANGUAGE")}`);
+  console.log(`  ┌${"─".repeat(labelWidth)}┬${"─".repeat(descWidth)}┐`);
+  console.log(
+    `  │ ${chalk.cyan.bold(padRight("type any task", labelWidth))} │ ${chalk.white(padRight("Execute a natural language development task", descWidth))}│`,
+  );
+  console.log(`  │ ${chalk.gray(padRight("", labelWidth))} │ ${chalk.gray(padRight('Example: "Explain this project"', descWidth))}│`);
+  console.log(`  └${"─".repeat(labelWidth)}┴${"─".repeat(descWidth)}┘`);
+  console.log();
+
+  console.log(`  ${chalk.gray("Type")} ${chalk.cyan("/help")} ${chalk.gray("for the full reference, or")} ${chalk.cyan("/")} ${chalk.gray("to reopen this palette.")}`);
+  console.log();
+}
+
+// ---------------------------------------------------------------------------
+// /update — Update DEVBYAI (advanced users)
+// ---------------------------------------------------------------------------
+
+function handleUpdate(): void {
+  const { execSync } = require("node:child_process");
+
+  console.log();
+  console.log(sectionHeader("UPDATE DEVBYAI"));
+  console.log();
+
+  let updated = false;
+
+  // Step 1: Pull latest changes
+  console.log(`  ${chalk.cyan("▶")} ${chalk.bold.white("Pulling latest changes...")}`);
+  try {
+    const result = execSync("git pull", {
+      encoding: "utf-8",
+      timeout: 60000,
+    });
+    console.log(`    ${chalk.gray(result.trim().split("\n").pop() || "done")}`);
+    updated = true;
+  } catch (err) {
+    console.log(`    ${chalk.yellow(symbols.warning)} ${chalk.gray("Git pull failed — you may need to merge manually.")}`);
+  }
+  console.log();
+
+  // Step 2: Install dependencies
+  console.log(`  ${chalk.cyan("▶")} ${chalk.bold.white("Installing dependencies...")}`);
+  try {
+    execSync("pnpm install", {
+      encoding: "utf-8",
+      timeout: 120000,
+    });
+    console.log(`    ${chalk.green(symbols.success)} Dependencies installed.`);
+    updated = true;
+  } catch (err) {
+    console.log(`    ${chalk.red(symbols.error)} ${chalk.gray("pnpm install failed.")}`);
+  }
+  console.log();
+
+  // Step 3: Build packages
+  console.log(`  ${chalk.cyan("▶")} ${chalk.bold.white("Building packages...")}`);
+  try {
+    execSync("pnpm build", {
+      encoding: "utf-8",
+      timeout: 120000,
+    });
+    console.log(`    ${chalk.green(symbols.success)} Packages built.`);
+    updated = true;
+  } catch (err) {
+    console.log(`    ${chalk.red(symbols.error)} ${chalk.gray("Build failed.")}`);
+  }
+  console.log();
+
+  if (updated) {
+    console.log(`  ${chalk.green(symbols.success)} ${chalk.bold.white("DEVBYAI updated successfully.")}`);
+    console.log(`  ${chalk.gray("Restart DEVBYAI to use the latest version.")}`);
+  } else {
+    console.log(`  ${chalk.yellow(symbols.warning)} ${chalk.bold.white("No changes were applied.")}`);
+  }
+  console.log();
+}
+
+// ---------------------------------------------------------------------------
 // Execute task
 // ---------------------------------------------------------------------------
 
@@ -1061,6 +1251,9 @@ export async function startInteractive(options: InteractiveOptions): Promise<voi
       const cmd = trimmed.toLowerCase().split(" ")[0];
 
       switch (cmd) {
+        case "/":
+          handleSlashPalette();
+          break;
         case "/help":
           handleHelp();
           break;
@@ -1127,6 +1320,9 @@ export async function startInteractive(options: InteractiveOptions): Promise<voi
             `  ${chalk.gray("Workspace:")} ${chalk.white(workspace.name)}  ${chalk.gray("•")}  ${chalk.gray("Provider:")} ${chalk.white(providerId)}`,
           );
           console.log();
+          break;
+        case "/update":
+          handleUpdate();
           break;
         case "/exit":
           console.log();
