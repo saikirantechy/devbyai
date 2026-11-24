@@ -1000,6 +1000,9 @@ A dedicated [`resources/`](resources/) folder contains coding-focused guides for
 | [`adding-user-providers.md`](resources/adding-user-providers.md) | Add custom AI providers |
 | [`advanced-features.md`](resources/advanced-features.md) | Hooks, workflows, skills, agents, CLI commands |
 | [`architecture/README.md`](resources/architecture/README.md) | AI coding platform architecture (12 guides) |
+| [`skills/README.md`](resources/skills/README.md) | UI/UX, Dev, Doc, Format, Security skills + installation guide |
+| [`skills/app-web-dev-skills.md`](resources/skills/app-web-dev-skills.md) | App, website, web app dev skills |
+| [`skills/agent-skills.md`](resources/skills/agent-skills.md) | Reusable agent skill bundles |
 
 ### Recommended flow for new users
 

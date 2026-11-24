@@ -50,6 +50,19 @@ This folder contains everything a contributor needs to write code, add features,
 
 ---
 
+## 🧠 Skills — UI/UX, Dev, Doc, Format, Security
+
+| Guide | Description |
+|-------|-------------|
+| [`skills/README.md`](skills/README.md) | Overview of all DEVBYAI skills |
+| [`skills/ui-ux-skills.md`](skills/ui-ux-skills.md) | UI/UX design skills (responsive, accessibility, design system) |
+| [`skills/dev-skills.md`](skills/dev-skills.md) | Development skills (TypeScript, Node.js, React, Next.js, Python) |
+| [`skills/doc-skills.md`](skills/doc-skills.md) | Documentation skills (API docs, README, contribution guide) |
+| [`skills/format-dev-skills.md`](skills/format-dev-skills.md) | Code formatting skills (formatting, imports, naming, lint) |
+| [`skills/security-skills.md`](skills/security-skills.md) | Security skills (audit, secure coding, secret management, OWASP) |
+| [`skills/skill-installation.md`](skills/skill-installation.md) | Which skills are required for each tool + installation |
+
+---
 
 ## 🧭 Getting Started (Coding First)
 
